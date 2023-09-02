@@ -1,6 +1,5 @@
 SAMMI
 ===
-
 ## Description
 
 SAMMI, Split & Merge Meaning Information, tries to figure out a meaningful chart to let engineers know How a product is split and merged in whole progress of processing.
@@ -13,8 +12,8 @@ SAMMI, Split & Merge Meaning Information, tries to figure out a meaningful chart
    1. name, row & col need to be predefined.
    2. same row with the same name.
 2. create `Link` using `Node` from 1.
+   1. direction from top-left to bottom-right.
 
-Example1:
 
 ```js
 // create a map
@@ -46,4 +45,18 @@ map.link(n31, n15, '#666666', 'M');
 map.fly();
 ```
 
+## Features
 
+* Selectable.
+* Hintable.
+* Configurable of column width and row height.
+* Fit width for small dataset.
+
+
+## Copyright and License
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+ 
