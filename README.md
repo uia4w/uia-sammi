@@ -10,7 +10,7 @@ SAMMI, Split & Merge Meaning Information, tries to figure out a meaningful chart
 
 1. create `Node` using API.
    1. name, row & col need to be predefined.
-   2. same row with the same name.
+   2. nodes with same name are the same group.
 2. create `Link` using `Node` from 1.
    1. direction from top-left to bottom-right.
 
@@ -47,8 +47,8 @@ map.fly();
 
 ## Features
 
-* Selectable.
-* Hintable.
+* Selectable - based on the name of `Node`.
+* Hintable - based on the name of `Node`.
 * Configurable of column width and row height.
 * Fit width for small dataset.
 
