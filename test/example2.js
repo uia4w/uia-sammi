@@ -2,7 +2,8 @@ var map = uia.sammi.create('sammi1', "100%", "400px")
   .fitWidth(false)
   .colWidth(60)
   .rowHeight(60)
-  .nodeClicked((e, s, node) => alert(node.value));
+  // .nodeClicked((e, s, node) => alert(node.value));
+  .nodeDbClicked((e, s, node) => alert(node.value));
 
 var k0_0 = map.node('L.1', 0, 0, 25, 'BD1XE031.1');
 var k10_0 = map.node('L.1', 10, 0, 23, 'BD1XE031.1');

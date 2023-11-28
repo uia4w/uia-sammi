@@ -1,5 +1,12 @@
 var map = uia.sammi.create('sammi1');
 
+// columns
+map.column("this");
+map.column("is");
+map.column("a");
+map.column("good");
+map.column("case");
+
 // row 1
 var n11 = map.node("WD8HQ007.1", 0, 0, 25);
 var n12 = map.node("WD8HQ007.1", 1, 0, 23);

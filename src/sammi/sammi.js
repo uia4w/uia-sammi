@@ -13,6 +13,7 @@ function Sammi(elementId, width, height) {
   this._colWidth = 60;
   this._rowHeight = 50;
   this._fitWidth = true;
+  this._columns = [];
   this._nodes = [];
   this._links = [];
   this._data = [];
@@ -21,15 +22,22 @@ function Sammi(elementId, width, height) {
 
   // svg
   this._svg = null;
+  this._columnGroup = null;
   this._linkGroup = null;
   this._nodeGroup = null;
-  this._labelGroup = null;
+  this._nodeLabelGroup = null;
 
   this._onNodeClicked = () => {};
+  this._onNodeDbClicked = () => {};
   this._proxyNodeClicked = (e, node) => {
     e.stopPropagation();
     this.select(this._selectedName == node.name ? null : node.name);
     this._onNodeClicked(e, this, node);
+  };
+  this._proxyNodeDbClicked = (e, node) => {
+    e.stopPropagation();
+    this.select(node.name);
+    this._onNodeDbClicked(e, this, node);
   };
 
   addEventListener(
@@ -51,14 +59,17 @@ Sammi.prototype.id = function() {
 }
 
 Sammi.prototype.reset = function() {
+  this._columns = [];
   this._nodes = [];
   this._links = [];
   this._data = [];
   if (this._svg != null) {
+    this._columnGroup.selectAll("text").data([]).exit().remove();
     this._linkGroup.selectAll("path").data([]).exit().remove();
+    this._linkGroup.selectAll("text").data([]).exit().remove();
     this._nodeGroup.selectAll("circle").data([]).exit().remove();
     this._nodeGroup.selectAll("text").data([]).exit().remove();
-    this._labelGroup.selectAll("text").data([]).exit().remove();
+    this._nodeLabelGroup.selectAll("text").data([]).exit().remove();
   }
   return this;
 }
@@ -108,8 +119,14 @@ Sammi.prototype.node = function(name, col, row, qty = 1, value = null) {
   return n;
 }
 
+Sammi.prototype.column = function(name) {
+  this._columns.push(name);
+  return this;
+}
+
 Sammi.prototype.link = function(n1, n2, color = '#000000', type = 'S', value = null) {
   var link = {
+    name: null,
     source: n1,
     target: n2,
     color: color,
@@ -119,7 +136,7 @@ Sammi.prototype.link = function(n1, n2, color = '#000000', type = 'S', value = n
   n1.end = false;
   this._links.push(link);
   this._data.push([n1, n2]);
-  return this;
+  return link;
 }
 
 Sammi.prototype.select = function(name, hintOnly = false) {
@@ -216,9 +233,13 @@ Sammi.prototype.zip = function() {
   });
 };
 
-
 Sammi.prototype.nodeClicked = function(fn) {
   this._onNodeClicked = fn;
+  return this;
+}
+
+Sammi.prototype.nodeDbClicked = function(fn) {
+  this._onNodeDbClicked = fn;
   return this;
 }
 
@@ -227,6 +248,7 @@ Sammi.prototype.refresh = function() {
     return;
   }
 
+  var headH = this._columns.length > 0 ? 13 : 0;
   var x1 = 0;
   var x2 = 1;
   var y1 = 0;
@@ -244,25 +266,43 @@ Sammi.prototype.refresh = function() {
   var height = this._rowHeight * (y2 - y1 + 1);
 
   this._svg.attr("width", width);
-  this._svg.attr("height", height);
+  this._svg.attr("height", height + headH);
 
   const xScale = d3.scaleLinear()
     .domain([x1 - 1, x2 + 1])
     .range([0, width])
   const yScale = d3.scaleLinear()
     .domain([y1 - 1, y2 + 1])
-    .range([0, height])
+    .range([0 + headH, height + headH])
   const lineGenerator = d3.line()
     .x(node => xScale(node.col))
     .y(node => yScale(node.row))
     .curve(ctx => step(ctx, 0.9));
 
+  var _rad = 9;
+
+  // columns
+  this._columnGroup.selectAll("text")
+    .data(this._columns)
+    .attr("x", function(col, i) {
+      return xScale(i) - this.getComputedTextLength() / 2;
+    })
+    .attr("y", 24)
+    .attr("dx", "-.20em");
+
   // links
   this._linkGroup.selectAll("path")
     .data(this._data)
     .attr("d", lineGenerator);
+  /**
+  this._linkGroup.selectAll("text")
+    .data(this._data)
+    .attr("x", d => xScale(d[0].col))
+    .attr("y", d => yScale(d[0].row))
+    .attr("dx", "1.2em")
+    .attr("dy", "-.46em")
+   */
 
-  var _rad = 9;
   // nodes
   this._nodeGroup.selectAll("circle")
     .data(this._nodes)
@@ -277,16 +317,17 @@ Sammi.prototype.refresh = function() {
     .attr("dx", node => node.qty >= 10 ? "-.46em" : "-.20em")
     .attr("dy", ".40em");
 
-  // labels
-  this._labelGroup.selectAll("text")
+  // nodes: label
+  this._nodeLabelGroup.selectAll("text")
     .data(this._nodes)
     .attr("x", node => xScale(node.col) - _rad)
-    .attr("y", node => yScale(node.row) + _rad + 13);
+    .attr("y", node => yScale(node.row) + _rad + 12);
 }
 
 Sammi.prototype.fly = function() {
   this.refresh();
 
+  var headH = this._columns.length > 0 ? 13 : 0;
   var x1 = 0;
   var x2 = 1;
   var y1 = 0;
@@ -302,15 +343,18 @@ Sammi.prototype.fly = function() {
   if (!this._svg) {
     this._svg = div.append("svg")
       .attr("id", this._id + "_svg");
+    this._columnGroup = this._svg
+      .append("g")
+      .attr("id", this._id + "_svg_columns");
     this._linkGroup = this._svg
       .append("g")
       .attr("id", this._id + "_svg_links");
     this._nodeGroup = this._svg
       .append("g")
       .attr("id", this._id + "_svg_nodes");
-    this._labelGroup = this._svg
+    this._nodeLabelGroup = this._svg
       .append("g")
-      .attr("id", this._id + "_svg_labels");
+      .attr("id", this._id + "_svg_nodeLabels");
   }
 
   // var scrollWidth = div.property("scrollWidth");
@@ -319,18 +363,31 @@ Sammi.prototype.fly = function() {
   var height = this._rowHeight * (y2 - y1 + 1);
 
   this._svg.attr("width", width);
-  this._svg.attr("height", height);
+  this._svg.attr("height", height + headH);
 
   const xScale = d3.scaleLinear()
     .domain([x1 - 1, x2 + 1])
     .range([0, width])
   const yScale = d3.scaleLinear()
     .domain([y1 - 1, y2 + 1])
-    .range([0, height])
+    .range([0 + headH, height + headH])
   const lineGenerator = d3.line()
     .x(node => xScale(node.col))
     .y(node => yScale(node.row))
     .curve(ctx => step(ctx, 0.9));
+
+  var _rad = 9;
+
+  this._columnGroup.selectAll("text")
+    .data(this._columns)
+    .enter()
+    .append("text")
+    .text(col => col)
+    .style("font", "12px times")
+    .attr("x", function(col, i) {
+      return xScale(i) - this.getComputedTextLength() / 2;
+    })
+    .attr("y", 24);
 
   // links
   this._linkGroup.selectAll("path")
@@ -343,7 +400,19 @@ Sammi.prototype.fly = function() {
     .style("stroke-dasharray", (d, i) => this._links[i].type == 'S' ? "6,3" : "0,0")
     .style("stroke", (d, i) => this._links[i].color)
 
-  var _rad = 9;
+  /**
+  this._linkGroup.selectAll("text")
+    .data(this._data)
+    .enter()
+    .append("text")
+    .attr("x", d => xScale(d[0].col))
+    .attr("y", d => yScale(d[0].row))
+    .attr("dx", "1.2em")
+    .attr("dy", "-.46em")
+    .style("font", "11px times")
+    .text((d, i) => this._links[i].name);
+   */
+
   // nodes
   this._nodeGroup.selectAll("circle")
     .data(this._nodes)
@@ -372,16 +441,17 @@ Sammi.prototype.fly = function() {
     .style("cursor", "hand")
     .text(node => node.qty)
     .on("click", this._proxyNodeClicked)
+    .on("dblclick", this._proxyNodeDbClicked)
     .on("mouseover", (e, d) => this._hintable ? this.select(d.name, true) : this)
     .on("mouseout", (e, d) => this._hintable ? this.select(null, true) : this);
 
-  // labels
-  this._labelGroup.selectAll("text")
+  // nodes: label
+  this._nodeLabelGroup.selectAll("text")
     .data(this._nodes)
     .enter()
     .append("text")
     .attr("x", node => xScale(node.col) - _rad)
-    .attr("y", node => yScale(node.row) + _rad + 13)
+    .attr("y", node => yScale(node.row) + _rad + 12)
     .attr("fill", "black")
     .style("font", "11px times")
     .style("cursor", "hand")
